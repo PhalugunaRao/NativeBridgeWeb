@@ -1,0 +1,42 @@
+<svg width="1120" height="720" viewBox="0 0 1120 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1120" height="720" fill="#F7FAFC"/>
+  <text x="64" y="78" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700" fill="#172033">Automatic Permission Flow</text>
+  <text x="64" y="112" font-family="Inter, Arial, sans-serif" font-size="16" fill="#5C667A">The host app configures capabilities. NativeBridgeWeb handles the Android runtime flow.</text>
+
+  <rect x="64" y="172" width="230" height="360" rx="26" fill="#111827"/>
+  <rect x="82" y="212" width="194" height="278" rx="14" fill="#FFFFFF"/>
+  <rect x="100" y="242" width="158" height="46" rx="8" fill="#EAF2FF"/>
+  <text x="118" y="270" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#1D4ED8">Web app asks camera</text>
+  <rect x="100" y="316" width="158" height="14" rx="7" fill="#CBD5E1"/>
+  <rect x="100" y="344" width="126" height="14" rx="7" fill="#E2E8F0"/>
+  <rect x="100" y="404" width="158" height="42" rx="8" fill="#2563EB"/>
+  <text x="139" y="430" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">Start call</text>
+  <text x="116" y="560" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">PWA request</text>
+
+  <rect x="360" y="184" width="320" height="164" rx="18" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="392" y="230" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#172033">PermissionManager</text>
+  <text x="392" y="262" font-family="Inter, Arial, sans-serif" font-size="15" fill="#475569">Checks current grant state</text>
+  <text x="392" y="292" font-family="Inter, Arial, sans-serif" font-size="15" fill="#475569">Detects rationale and denied forever</text>
+  <text x="392" y="322" font-family="Inter, Arial, sans-serif" font-size="15" fill="#475569">Maps WebView resources to Android permissions</text>
+
+  <rect x="758" y="150" width="280" height="210" rx="24" fill="#111827"/>
+  <rect x="782" y="190" width="232" height="132" rx="14" fill="#FFFFFF"/>
+  <text x="810" y="226" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#172033">Allow permission?</text>
+  <text x="810" y="256" font-family="Inter, Arial, sans-serif" font-size="13" fill="#475569">This web app needs camera and microphone.</text>
+  <rect x="810" y="282" width="82" height="28" rx="7" fill="#E2E8F0"/>
+  <text x="831" y="301" font-family="Inter, Arial, sans-serif" font-size="12" fill="#334155">Deny</text>
+  <rect x="904" y="282" width="82" height="28" rx="7" fill="#2563EB"/>
+  <text x="925" y="301" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">Allow</text>
+
+  <rect x="758" y="420" width="280" height="150" rx="18" fill="#F0FDF4" stroke="#BBF7D0"/>
+  <text x="790" y="464" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#166534">Result callback</text>
+  <text x="790" y="496" font-family="Inter, Arial, sans-serif" font-size="15" fill="#475569">Grant or deny WebView request</text>
+  <text x="790" y="526" font-family="Inter, Arial, sans-serif" font-size="15" fill="#475569">Open settings if permanently denied</text>
+
+  <path d="M294 352 H360" stroke="#94A3B8" stroke-width="4"/>
+  <path d="M680 266 H758" stroke="#94A3B8" stroke-width="4"/>
+  <path d="M900 360 V420" stroke="#94A3B8" stroke-width="4"/>
+  <polygon points="352,344 368,352 352,360" fill="#94A3B8"/>
+  <polygon points="750,258 766,266 750,274" fill="#94A3B8"/>
+  <polygon points="892,412 900,428 908,412" fill="#94A3B8"/>
+</svg>

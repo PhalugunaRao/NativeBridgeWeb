@@ -84,6 +84,22 @@ webview-security/src/main/java/com/phalu/webview/security/
 - Security: safe defaults, mixed content blocking, Safe Browsing toggle, file access restrictions, URL allowlist/blocklist, external scheme routing, SSL error cancellation, bridge host allowlist, and security audit utilities.
 - Integration: XML view, programmatic API, lifecycle-aware controller, `StateFlow<BrowserState>`, and a Compose integration path through `AndroidView`.
 
+## UI Screens
+
+These screens show how the SDK fits into a host app and what users can expect from the integration.
+
+### SDK Overview
+
+![NativeBridgeWeb SDK overview](docs/screens/nativebridgeweb-overview.svg)
+
+### Automatic Permission Flow
+
+![NativeBridgeWeb permission flow](docs/screens/nativebridgeweb-permissions.svg)
+
+### Consumer Setup Flow
+
+![NativeBridgeWeb consumer setup](docs/screens/nativebridgeweb-consumer-setup.svg)
+
 ## Installation
 
 For development inside this repository:

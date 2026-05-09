@@ -1,0 +1,31 @@
+<svg width="1120" height="720" viewBox="0 0 1120 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1120" height="720" fill="#F8FAFC"/>
+  <text x="64" y="76" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700" fill="#172033">How Users Consume The SDK</text>
+  <text x="64" y="110" font-family="Inter, Arial, sans-serif" font-size="16" fill="#5C667A">Build once, share a Maven-ready Android SDK package with app developers.</text>
+
+  <rect x="78" y="176" width="260" height="130" rx="18" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="110" y="218" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="#172033">1. Build SDK zip</text>
+  <rect x="110" y="242" width="190" height="34" rx="8" fill="#0F172A"/>
+  <text x="124" y="264" font-family="JetBrains Mono, Consolas, monospace" font-size="13" fill="#E2E8F0">./gradlew packageSdkRelease</text>
+
+  <rect x="430" y="176" width="260" height="130" rx="18" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="462" y="218" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="#172033">2. Share artifacts</text>
+  <text x="462" y="252" font-family="Inter, Arial, sans-serif" font-size="14" fill="#475569">AARs, JARs, Maven repo</text>
+  <text x="462" y="280" font-family="Inter, Arial, sans-serif" font-size="14" fill="#475569">NativeBridgeWeb-1.0.0 zip</text>
+
+  <rect x="782" y="176" width="260" height="130" rx="18" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="814" y="218" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="#172033">3. User adds Gradle</text>
+  <text x="814" y="252" font-family="JetBrains Mono, Consolas, monospace" font-size="13" fill="#2563EB">implementation(...webview-core...)</text>
+  <text x="814" y="280" font-family="Inter, Arial, sans-serif" font-size="14" fill="#475569">Then configure AdvancedWebView</text>
+
+  <path d="M338 241 H430" stroke="#94A3B8" stroke-width="4"/>
+  <path d="M690 241 H782" stroke="#94A3B8" stroke-width="4"/>
+  <polygon points="422,233 438,241 422,249" fill="#94A3B8"/>
+  <polygon points="774,233 790,241 774,249" fill="#94A3B8"/>
+
+  <rect x="96" y="408" width="928" height="190" rx="22" fill="#0F172A"/>
+  <text x="132" y="452" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">Consumer app setup</text>
+  <text x="132" y="492" font-family="JetBrains Mono, Consolas, monospace" font-size="15" fill="#93C5FD">repositories { maven { url = uri("$rootDir/maven-repository") } }</text>
+  <text x="132" y="532" font-family="JetBrains Mono, Consolas, monospace" font-size="15" fill="#BBF7D0">implementation("com.phalu.nativebridgeweb:webview-core:1.0.0")</text>
+  <text x="132" y="572" font-family="JetBrains Mono, Consolas, monospace" font-size="15" fill="#BBF7D0">implementation("com.phalu.nativebridgeweb:webview-permissions:1.0.0")</text>
+</svg>
