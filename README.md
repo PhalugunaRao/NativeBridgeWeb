@@ -224,7 +224,7 @@ class MainActivity : AppCompatActivity() {
         permissionManager = WebViewPermissionManager.from(this)
 
         bridge = JsBridge(trustedHosts = setOf("example.com")).apply {
-            registerHandler("getDevice") {
+            registerHandler("getDevice") { _: JSONObject ->
                 JSONObject()
                     .put("platform", "android")
                     .put("sdk", "NativeBridgeWeb")
@@ -315,6 +315,536 @@ dependencies {
 ```
 
 Maven repository usage is better than raw AAR files because dependency metadata is handled automatically.
+
+## Developer API Cookbook
+
+This section shows the most common imports and method calls after a user adds the library to an Android app.
+
+### Common Imports
+
+```kotlin
+import android.os.Bundle
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.ValueCallback
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.phalu.webview.core.AdvancedWebView
+import com.phalu.webview.core.AdvancedWebViewCallback
+import com.phalu.webview.core.DownloadRequest
+import com.phalu.webview.core.RequestInterceptor
+import com.phalu.webview.core.WebViewError
+import com.phalu.webview.core.config.AdvancedWebViewConfig
+import com.phalu.webview.core.config.DarkMode
+import com.phalu.webview.core.config.DownloadConfig
+import com.phalu.webview.core.config.PwaConfig
+import com.phalu.webview.core.config.SecurityConfig
+import com.phalu.webview.core.config.WebPermissions
+import com.phalu.webview.core.config.WebViewSettings
+import com.phalu.webview.jsbridge.JsBridge
+import com.phalu.webview.permissions.WebViewPermissionManager
+import com.phalu.webview.permissions.model.PermissionCallbacks
+import com.phalu.webview.permissions.model.PermissionState
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+```
+
+### Basic Setup Order
+
+```kotlin
+webView = findViewById(R.id.advanced_webview)
+permissionManager = WebViewPermissionManager.from(this)
+bridge = JsBridge(trustedHosts = setOf("example.com"))
+bridge.attachToWebView(webView.webView)
+
+webView.configure(
+    config = AdvancedWebViewConfig(
+        url = "https://example.com",
+        headers = mapOf("Authorization" to "Bearer token"),
+    ),
+    lifecycleOwner = this,
+    permissionHandler = permissionManager,
+    fileChooserHandler = permissionManager,
+)
+```
+
+### Load A URL
+
+Initial URL:
+
+```kotlin
+webView.configure(
+    config = AdvancedWebViewConfig(
+        url = "https://example.com",
+    ),
+    lifecycleOwner = this,
+)
+```
+
+Load another URL later:
+
+```kotlin
+webView.loadUrl("https://example.com/dashboard")
+```
+
+Load URL with headers:
+
+```kotlin
+webView.loadUrl(
+    url = "https://example.com/profile",
+    headers = mapOf(
+        "Authorization" to "Bearer token",
+        "Device" to "Android",
+    ),
+)
+```
+
+### Pass Headers
+
+Static headers in config:
+
+```kotlin
+val config = AdvancedWebViewConfig(
+    url = "https://example.com",
+    headers = mapOf(
+        "Authorization" to "Bearer token",
+        "Device" to "Android",
+        "App-Version" to "1.0.0",
+    ),
+)
+```
+
+Dynamic headers with an interceptor:
+
+```kotlin
+val interceptor = object : RequestInterceptor {
+    override fun headersFor(url: String): Map<String, String> {
+        return mapOf(
+            "Authorization" to "Bearer ${tokenProvider.currentToken()}",
+            "Device" to "Android",
+        )
+    }
+
+    override fun intercept(request: WebResourceRequest): WebResourceResponse? {
+        return null
+    }
+}
+
+webView.configure(
+    config = config,
+    lifecycleOwner = this,
+    requestInterceptor = interceptor,
+)
+```
+
+Android WebView applies custom headers mainly to top-level `loadUrl` calls. For login/session auth, prefer secure cookies when possible.
+
+### Enable Permissions
+
+Tell the SDK which permissions your web app may need:
+
+```kotlin
+val permissions = WebPermissions(
+    camera = true,
+    microphone = true,
+    location = true,
+    storage = true,
+    photos = true,
+    videos = true,
+    audio = true,
+    notifications = true,
+    bluetooth = false,
+    fileAccess = true,
+)
+```
+
+Create the manager:
+
+```kotlin
+val permissionManager = WebViewPermissionManager.from(
+    activity = this,
+    callbacks = object : PermissionCallbacks {
+        override fun onPermissionStateChanged(
+            permissions: List<String>,
+            state: PermissionState,
+        ) {
+            // Granted, Denied, PermanentlyDenied, or RationaleRequired.
+        }
+    },
+)
+```
+
+Attach it to the WebView:
+
+```kotlin
+webView.configure(
+    config = AdvancedWebViewConfig(
+        url = "https://example.com",
+        permissions = permissions,
+    ),
+    lifecycleOwner = this,
+    permissionHandler = permissionManager,
+    fileChooserHandler = permissionManager,
+)
+```
+
+Request configured permissions before loading a sensitive page:
+
+```kotlin
+permissionManager.ensurePermissions(permissions) { state ->
+    if (state == PermissionState.Granted) {
+        webView.loadUrl("https://example.com/video-call")
+    }
+}
+```
+
+Clean pending permission/file requests:
+
+```kotlin
+override fun onDestroy() {
+    permissionManager.cleanup()
+    super.onDestroy()
+}
+```
+
+### Configure WebView Settings
+
+```kotlin
+val settings = WebViewSettings(
+    javaScriptEnabled = true,
+    domStorageEnabled = true,
+    databaseEnabled = true,
+    supportMultipleWindows = true,
+    mediaPlaybackRequiresUserGesture = false,
+    supportZoom = true,
+    darkMode = DarkMode.FOLLOW_SYSTEM,
+    safeBrowsingEnabled = true,
+    pullToRefreshEnabled = true,
+    allowFileAccess = false,
+    allowContentAccess = true,
+)
+```
+
+Use settings:
+
+```kotlin
+val config = AdvancedWebViewConfig(
+    url = "https://example.com",
+    settings = settings,
+)
+```
+
+### PWA And Offline Support
+
+```kotlin
+val config = AdvancedWebViewConfig(
+    url = "https://example.com",
+    pwa = PwaConfig(
+        serviceWorkersEnabled = true,
+        offlineCacheEnabled = true,
+        geolocationEnabled = true,
+        manifestUrl = "https://example.com/manifest.json",
+    ),
+)
+```
+
+Observe browser state:
+
+```kotlin
+lifecycleScope.launch {
+    webView.state.collect { state ->
+        val currentUrl = state.url
+        val isOffline = state.isOffline
+        val progress = state.progress
+    }
+}
+```
+
+### JavaScript Bridge Methods
+
+Android setup:
+
+```kotlin
+val bridge = JsBridge(trustedHosts = setOf("example.com"))
+
+bridge.registerHandler("login") { payload: JSONObject ->
+    val token = payload.optString("token")
+    JSONObject()
+        .put("success", token.isNotBlank())
+}
+
+bridge.registerHandler("getDevice") { _: JSONObject ->
+    JSONObject()
+        .put("platform", "android")
+        .put("sdk", "NativeBridgeWeb")
+}
+
+bridge.attachToWebView(webView.webView)
+```
+
+Inject Promise helpers after each page load:
+
+```kotlin
+callback = object : AdvancedWebViewCallback {
+    override fun onPageFinished(url: String) {
+        bridge.injectRuntime()
+    }
+}
+```
+
+Send Android event to JavaScript:
+
+```kotlin
+bridge.emit(
+    type = "sessionChanged",
+    payload = JSONObject().put("loggedIn", true),
+)
+```
+
+Call a JavaScript function:
+
+```kotlin
+bridge.callJs(
+    functionName = "window.onNativeEvent",
+    payload = JSONObject().put("type", "refresh"),
+)
+```
+
+JavaScript usage:
+
+```javascript
+window.Android.postMessage({
+  type: "login",
+  payload: { token: "123" }
+});
+
+const device = await window.Android.request("getDevice", {});
+
+window.addEventListener("native-message", function(event) {
+  console.log(event.data);
+});
+```
+
+Destroy bridge:
+
+```kotlin
+override fun onDestroy() {
+    bridge.destroy()
+    super.onDestroy()
+}
+```
+
+### Navigation Methods
+
+```kotlin
+webView.reload()
+webView.stopLoading()
+
+val wentBack = webView.goBack()
+val wentForward = webView.goForward()
+```
+
+Evaluate JavaScript directly:
+
+```kotlin
+webView.evaluateJavascript(
+    script = "document.title",
+    callback = ValueCallback { result ->
+        // result is JSON-encoded by WebView.
+    },
+)
+```
+
+### Save And Restore WebView State
+
+```kotlin
+override fun onSaveInstanceState(outState: Bundle) {
+    webView.saveState(outState)
+    super.onSaveInstanceState(outState)
+}
+
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    savedInstanceState?.let { webView.restoreState(it) }
+}
+```
+
+### Clear Cache, Storage, And Session
+
+Clear WebView cache/history:
+
+```kotlin
+webView.clearSession(includeCookies = false)
+```
+
+Clear cookies and WebView storage:
+
+```kotlin
+webView.clearSession(includeCookies = true)
+```
+
+### Download And Error Callbacks
+
+```kotlin
+val callback = object : AdvancedWebViewCallback {
+    override fun onPageStarted(url: String) {
+        // Show page loading state.
+    }
+
+    override fun onPageFinished(url: String) {
+        bridge.injectRuntime()
+    }
+
+    override fun onProgressChanged(progress: Int) {
+        // Progress is 0..100.
+    }
+
+    override fun onTitleChanged(title: String?) {
+        // Update toolbar title.
+    }
+
+    override fun onDownloadRequested(download: DownloadRequest) {
+        // SDK also enqueues downloads when DownloadConfig.enabled is true.
+    }
+
+    override fun onError(error: WebViewError) {
+        // Show retry or offline screen.
+    }
+
+    override fun onUrlBlocked(url: String, reason: String) {
+        // Log or show blocked-domain message.
+    }
+
+    override fun onExternalUrl(url: String) {
+        // External scheme opened outside WebView.
+    }
+}
+```
+
+Use callback:
+
+```kotlin
+webView.configure(
+    config = config,
+    lifecycleOwner = this,
+    callback = callback,
+)
+```
+
+Download config:
+
+```kotlin
+val config = AdvancedWebViewConfig(
+    url = "https://example.com",
+    downloads = DownloadConfig(
+        enabled = true,
+        showNotification = true,
+        allowedMimeTypes = emptySet(),
+        blockedMimeTypes = emptySet(),
+    ),
+)
+```
+
+### Security Configuration
+
+```kotlin
+val security = SecurityConfig(
+    allowedHosts = setOf("example.com", "accounts.example.com"),
+    blockedHosts = setOf("malicious.example"),
+    allowedSchemes = setOf("https"),
+    openExternalSchemes = true,
+    blockCleartextMainFrameLoads = true,
+    requireSecureCookies = true,
+)
+
+val config = AdvancedWebViewConfig(
+    url = "https://example.com",
+    security = security,
+)
+```
+
+### Complete Activity Example
+
+```kotlin
+class MainActivity : AppCompatActivity() {
+    private lateinit var webView: AdvancedWebView
+    private lateinit var permissionManager: WebViewPermissionManager
+    private lateinit var bridge: JsBridge
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        webView = findViewById(R.id.advanced_webview)
+        permissionManager = WebViewPermissionManager.from(this)
+        bridge = JsBridge(trustedHosts = setOf("example.com"))
+
+        bridge.registerHandler("getDevice") { _: JSONObject ->
+            JSONObject()
+                .put("platform", "android")
+                .put("sdk", "NativeBridgeWeb")
+        }
+        bridge.attachToWebView(webView.webView)
+
+        val config = AdvancedWebViewConfig(
+            url = "https://example.com",
+            headers = mapOf("Authorization" to "Bearer token"),
+            permissions = WebPermissions(
+                camera = true,
+                microphone = true,
+                location = true,
+                photos = true,
+                videos = true,
+                notifications = true,
+            ),
+            settings = WebViewSettings(
+                javaScriptEnabled = true,
+                domStorageEnabled = true,
+                supportMultipleWindows = true,
+                pullToRefreshEnabled = true,
+            ),
+            security = SecurityConfig(
+                allowedHosts = setOf("example.com"),
+                allowedSchemes = setOf("https"),
+            ),
+            pwa = PwaConfig(
+                serviceWorkersEnabled = true,
+                offlineCacheEnabled = true,
+            ),
+            downloads = DownloadConfig(enabled = true),
+        )
+
+        webView.configure(
+            config = config,
+            lifecycleOwner = this,
+            permissionHandler = permissionManager,
+            fileChooserHandler = permissionManager,
+            callback = object : AdvancedWebViewCallback {
+                override fun onPageFinished(url: String) {
+                    bridge.injectRuntime()
+                }
+
+                override fun onError(error: WebViewError) {
+                    webView.loadUrl("https://example.com/error")
+                }
+            },
+        )
+
+        savedInstanceState?.let { webView.restoreState(it) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        webView.saveState(outState)
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onDestroy() {
+        bridge.destroy()
+        permissionManager.cleanup()
+        super.onDestroy()
+    }
+}
+```
 
 ## XML Integration
 
@@ -433,7 +963,7 @@ Android:
 
 ```kotlin
 val bridge = JsBridge(trustedHosts = setOf("example.com"))
-bridge.registerHandler("getDevice") {
+bridge.registerHandler("getDevice") { _: JSONObject ->
     JSONObject()
         .put("platform", "android")
         .put("sdk", "AdvancedWebView")
