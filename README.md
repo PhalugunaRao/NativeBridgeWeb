@@ -284,6 +284,22 @@ Customize UI by implementing `PermissionUiDelegate`.
 ./gradlew :webview-security:assemble
 ```
 
+## Build SDK Artifacts
+
+To generate distributable AARs, extracted JARs, and a local Maven repository in one zip:
+
+```bash
+./gradlew packageSdkRelease
+```
+
+Output:
+
+```text
+build/distributions/NativeBridgeWeb-1.0.0-android-sdk.zip
+```
+
+For the full publishing process, see [SDK_PUBLISHING.md](SDK_PUBLISHING.md).
+
 ## Future Scaling Ideas
 
 - Add a dedicated `webview-downloader` module with OkHttp streaming, resumable downloads, and authenticated requests.
