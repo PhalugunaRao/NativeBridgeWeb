@@ -86,6 +86,8 @@ webview-security/src/main/java/com/phalu/webview/security/
 
 ## Installation
 
+For development inside this repository:
+
 ```kotlin
 dependencies {
     implementation(project(":webview-core"))
@@ -96,6 +98,207 @@ dependencies {
 ```
 
 The SDK min SDK is 24. The sample app targets SDK 36.
+
+## How Users Add This Library
+
+The recommended way to share this SDK is the generated release zip:
+
+```bash
+./gradlew packageSdkRelease
+```
+
+Give users this file:
+
+```text
+build/distributions/NativeBridgeWeb-1.0.0-android-sdk.zip
+```
+
+After they unzip it, they can use the included Maven repository.
+
+### 1. Add The SDK Repository
+
+In the user's app `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("/absolute/path/to/NativeBridgeWeb-1.0.0-android-sdk/maven-repository")
+        }
+    }
+}
+```
+
+If they copy the `maven-repository` folder into their project root, they can use:
+
+```kotlin
+maven {
+    url = uri("$rootDir/maven-repository")
+}
+```
+
+### 2. Add Dependencies
+
+In the user's app `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.phalu.nativebridgeweb:webview-core:1.0.0")
+    implementation("com.phalu.nativebridgeweb:webview-permissions:1.0.0")
+    implementation("com.phalu.nativebridgeweb:webview-jsbridge:1.0.0")
+    implementation("com.phalu.nativebridgeweb:webview-security:1.0.0")
+}
+```
+
+Minimum app setup:
+
+```kotlin
+android {
+    defaultConfig {
+        minSdk = 24
+    }
+}
+```
+
+### 3. Add App Permissions
+
+Add only the permissions required by the web app. Example:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+<uses-permission
+    android:name="android.permission.READ_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32" />
+```
+
+### 4. Add The WebView In XML
+
+```xml
+<com.phalu.webview.core.AdvancedWebView
+    android:id="@+id/advanced_webview"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" />
+```
+
+### 5. Configure In Activity
+
+```kotlin
+class MainActivity : AppCompatActivity() {
+    private lateinit var webView: AdvancedWebView
+    private lateinit var permissionManager: WebViewPermissionManager
+    private lateinit var bridge: JsBridge
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        webView = findViewById(R.id.advanced_webview)
+        permissionManager = WebViewPermissionManager.from(this)
+
+        bridge = JsBridge(trustedHosts = setOf("example.com")).apply {
+            registerHandler("getDevice") {
+                JSONObject()
+                    .put("platform", "android")
+                    .put("sdk", "NativeBridgeWeb")
+            }
+        }
+        bridge.attachToWebView(webView.webView)
+
+        webView.configure(
+            config = AdvancedWebViewConfig(
+                url = "https://example.com",
+                headers = mapOf("Authorization" to "Bearer token"),
+                permissions = WebPermissions(
+                    camera = true,
+                    microphone = true,
+                    location = true,
+                    photos = true,
+                    videos = true,
+                    notifications = true,
+                ),
+                settings = WebViewSettings(
+                    javaScriptEnabled = true,
+                    domStorageEnabled = true,
+                    supportMultipleWindows = true,
+                    pullToRefreshEnabled = true,
+                ),
+                security = SecurityConfig(
+                    allowedHosts = setOf("example.com"),
+                ),
+            ),
+            lifecycleOwner = this,
+            permissionHandler = permissionManager,
+            fileChooserHandler = permissionManager,
+            callback = object : AdvancedWebViewCallback {
+                override fun onPageFinished(url: String) {
+                    bridge.injectRuntime()
+                }
+            },
+        )
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        webView.saveState(outState)
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onDestroy() {
+        bridge.destroy()
+        permissionManager.cleanup()
+        super.onDestroy()
+    }
+}
+```
+
+Required imports:
+
+```kotlin
+import com.phalu.webview.core.AdvancedWebView
+import com.phalu.webview.core.AdvancedWebViewCallback
+import com.phalu.webview.core.config.AdvancedWebViewConfig
+import com.phalu.webview.core.config.SecurityConfig
+import com.phalu.webview.core.config.WebPermissions
+import com.phalu.webview.core.config.WebViewSettings
+import com.phalu.webview.jsbridge.JsBridge
+import com.phalu.webview.permissions.WebViewPermissionManager
+import org.json.JSONObject
+```
+
+### Alternative: Use Local AAR Files
+
+Users can also copy these files from the release zip into `app/libs/`:
+
+```text
+webview-core-release.aar
+webview-permissions-release.aar
+webview-jsbridge-release.aar
+webview-security-release.aar
+```
+
+Then add:
+
+```kotlin
+dependencies {
+    implementation(files("libs/webview-core-release.aar"))
+    implementation(files("libs/webview-permissions-release.aar"))
+    implementation(files("libs/webview-jsbridge-release.aar"))
+    implementation(files("libs/webview-security-release.aar"))
+}
+```
+
+Maven repository usage is better than raw AAR files because dependency metadata is handled automatically.
 
 ## XML Integration
 
